@@ -1,6 +1,9 @@
 package com.example.pestid;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,7 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
-
+    Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -19,6 +22,12 @@ public class MainActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+        button = findViewById(R.id.button);
+        button.setOnClickListener(v -> {
+            Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            startActivityForResult(takePicture, 0);
         });
     }
 }
