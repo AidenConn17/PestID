@@ -1,45 +1,41 @@
 package com.example.pestid;
 
-import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContract;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
     Button button;
-    String currentPhotoPath;
-    File photoFile = null;
-    private final ActivityResultLauncher<Uri> takePictureLauncher = registerForActivityResult(
-            new ActivityResultContracts.TakePicture(),
-            isSuccess -> {
-                File file = new File(currentPhotoPath);
-            }
-    );
-    int REQUEST_IMAGE_CAPTURE = 1;
+    PreviewView previewView;
+
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        cameraProviderFuture =ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try{
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindPreview(cameraProvider);
+            } catch (ExecutionException | InterruptedException ignored){
+            }
+        }, ContextCompat.getMainExecutor(this));
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -48,31 +44,22 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        try{
-            photoFile = createImageFile();
-        } catch (IOException e){
-        }
 
-        if(photoFile != null){
-            Uri photoUri = FileProvider.getUriForFile(this, "com.example.pestid.fileprovider", photoFile);
-            takePictureLauncher.launch(photoUri);
-        }
+        button = findViewById(R.id.button);
+        previewView = findViewById(R.id.previewView);
 
+        button.setOnClickListener(v -> {
+
+        });
     }
 
+    void bindPreview(@NonNull ProcessCameraProvider cameraProvider){
+        Preview preview = new Preview.Builder().build();
 
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-    private File createImageFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-            File image = File.createTempFile(
-                    imageFileName,
-                    ".jpg",
-                    storageDir
-            );
-        currentPhotoPath = image.getAbsolutePath();
-        return image;
+        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview);
     }
 
 }
