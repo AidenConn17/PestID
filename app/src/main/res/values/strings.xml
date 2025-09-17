@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">PestID</string>
     <string name="take_picture">Take Picture</string>
+    <string name="image_view_desc">Image display</string>
 </resources>
