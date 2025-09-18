@@ -1,10 +1,15 @@
 package com.example.pestid;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
 import androidx.exifinterface.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
@@ -45,6 +50,12 @@ import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity {
     Button button;
     PreviewView previewView;
@@ -54,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     Executor cameraExecutor;
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         cameraProviderFuture =ProcessCameraProvider.getInstance(this);
@@ -72,6 +84,13 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Only supported orientation for camera
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
+            requestPermissions(new String[] {Manifest.permission.CAMERA}, 0);
+        }
         button = findViewById(R.id.button);
         previewView = findViewById(R.id.previewView);
         imageView = findViewById(R.id.imageView);
@@ -107,10 +126,12 @@ public class MainActivity extends AppCompatActivity {
                         inputStream.close();
 
                         correctBitmap = rotateBitmapIfRequired(imageUri.getPath(), ogBitmap);
+                        getInfoAboutInsect(imageUri.getPath());
                     } catch (IOException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
                     imageView.setImageBitmap(correctBitmap);
+
                     image.close();
                 }
 
@@ -205,5 +226,19 @@ public class MainActivity extends AppCompatActivity {
         Matrix matrix = new Matrix();
         matrix.preScale(horizontal ? -1 : 1, vertical ? -1 : 1);
         return Bitmap.createBitmap(source, 0 ,0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    void getInfoAboutInsect(String imagePath) throws IOException{
+        OkHttpClient client = new OkHttpClient().newBuilder()
+                .build();
+        MediaType mediaType = MediaType.parse("application/json");
+        RequestBody body = RequestBody.create(mediaType, imagePath);
+        Request request = new Request.Builder()
+                .url("https://insect.kindwise.com/api/v1/identification?details=common_names,url,description,image")
+                .method("POST", body)
+                .addHeader("Api-Key", DataStorage.API_KEY)
+                .addHeader("Content-Type", "application/json")
+                .build();
+        Response response = client.newCall(request).execute();
     }
 }
