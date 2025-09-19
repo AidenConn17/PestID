@@ -6,21 +6,21 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 
-import androidx.exifinterface.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -43,26 +43,27 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+
 
 public class MainActivity extends AppCompatActivity {
     Button button;
     PreviewView previewView;
     ImageView imageView;
+    TextView textView;
     ImageCapture imageCapture;
     Camera camera;
     Executor cameraExecutor;
+    ExecutorService executorService = Executors.newCachedThreadPool();
+    ThreadPerTaskExecutor identificationExecutor = new ThreadPerTaskExecutor();
+    IdentificationViewModel identification = new IdentificationViewModel(identificationExecutor);
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     @SuppressLint("SourceLockedOrientationActivity")
@@ -94,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         button = findViewById(R.id.button);
         previewView = findViewById(R.id.previewView);
         imageView = findViewById(R.id.imageView);
+        textView = findViewById(R.id.textView);
 
         imageCapture = new ImageCapture.Builder().setTargetRotation(
                         getScreenRotationInDegrees(this))
@@ -118,19 +120,21 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
                     Bitmap bitmap = image.toBitmap();
                     Uri imageUri = bitmapToUri(getApplicationContext(), bitmap);
-                    Bitmap correctBitmap = null;
-                    try {
-                        InputStream inputStream = getContentResolver().openInputStream(imageUri);
-                        Bitmap ogBitmap = BitmapFactory.decodeStream(inputStream);
-                        assert inputStream != null;
-                        inputStream.close();
 
-                        correctBitmap = rotateBitmapIfRequired(imageUri.getPath(), ogBitmap);
-                        getInfoAboutInsect(imageUri.getPath());
+                    try {
+
+                        Cursor returnCursor = getContentResolver()
+                                .query(imageUri, null, null, null, null);
+                        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        returnCursor.moveToFirst();
+                        textView.setText(returnCursor.getString(nameIndex) + imageUri.getPath());
+                        identification.getInfoAboutInsect(returnCursor.getString(nameIndex), imageUri.getPath());
+                        returnCursor.close();
+
                     } catch (IOException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
-                    imageView.setImageBitmap(correctBitmap);
+                    imageView.setImageBitmap(bitmap);
 
                     image.close();
                 }
@@ -191,54 +195,6 @@ public class MainActivity extends AppCompatActivity {
         return Uri.parse(path);
     }
 
-    public Bitmap rotateBitmapIfRequired(String imagePath, Bitmap bitmap){
-        try{
-            ExifInterface ei = new ExifInterface(imagePath);
-            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
-            switch (orientation){
-                case ExifInterface.ORIENTATION_ROTATE_90:
-                    return rotateBitmap(bitmap, 90);
-                case ExifInterface.ORIENTATION_ROTATE_180:
-                    return rotateBitmap(bitmap, 180);
-                case ExifInterface.ORIENTATION_ROTATE_270:
-                    return rotateBitmap(bitmap, 270);
-                case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
-                    return flipBitmap(bitmap, true, false);
-                case ExifInterface.ORIENTATION_FLIP_VERTICAL:
-                    flipBitmap(bitmap, false, true);
-            }
 
-        }catch (IOException e){
-            Log.e("CameraX", "Bitmap rotation error: " + e.getMessage(), e);
-            return bitmap;
-        }
-        return null;
-    }
-
-    Bitmap rotateBitmap(Bitmap source, float angle){
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    Bitmap flipBitmap(Bitmap source, boolean horizontal, boolean vertical){
-        Matrix matrix = new Matrix();
-        matrix.preScale(horizontal ? -1 : 1, vertical ? -1 : 1);
-        return Bitmap.createBitmap(source, 0 ,0, source.getWidth(), source.getHeight(), matrix, true);
-    }
-
-    void getInfoAboutInsect(String imagePath) throws IOException{
-        OkHttpClient client = new OkHttpClient().newBuilder()
-                .build();
-        MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(mediaType, imagePath);
-        Request request = new Request.Builder()
-                .url("https://insect.kindwise.com/api/v1/identification?details=common_names,url,description,image")
-                .method("POST", body)
-                .addHeader("Api-Key", DataStorage.API_KEY)
-                .addHeader("Content-Type", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-    }
 }
