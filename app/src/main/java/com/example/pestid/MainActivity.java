@@ -2,18 +2,20 @@ package com.example.pestid;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 
+import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.provider.OpenableColumns;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
@@ -24,6 +26,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -54,7 +58,8 @@ import java.util.concurrent.Executors;
 
 
 public class MainActivity extends AppCompatActivity {
-    Button button;
+    Button takePictureBtn;
+    Button selectPictureBtn;
     PreviewView previewView;
     ImageView imageView;
     TextView textView;
@@ -64,9 +69,10 @@ public class MainActivity extends AppCompatActivity {
     ExecutorService executorService = Executors.newCachedThreadPool();
     ThreadPerTaskExecutor identificationExecutor = new ThreadPerTaskExecutor();
     IdentificationViewModel identification = new IdentificationViewModel(identificationExecutor);
+    ActivityResultLauncher<Intent> pickImage;
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    @SuppressLint("SourceLockedOrientationActivity")
+    @SuppressLint({"SourceLockedOrientationActivity", "IntentReset"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         cameraProviderFuture =ProcessCameraProvider.getInstance(this);
@@ -92,7 +98,8 @@ public class MainActivity extends AppCompatActivity {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
             requestPermissions(new String[] {Manifest.permission.CAMERA}, 0);
         }
-        button = findViewById(R.id.button);
+        takePictureBtn = findViewById(R.id.takePictureBtn);
+        selectPictureBtn = findViewById(R.id.selectPictureBtn);
         previewView = findViewById(R.id.previewView);
         imageView = findViewById(R.id.imageView);
         textView = findViewById(R.id.textView);
@@ -103,7 +110,22 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             cameraExecutor = getMainExecutor();
         }
-        button.setOnClickListener(v -> {
+
+        pickImage = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if(result.getResultCode() == MainActivity.RESULT_OK && result.getData() != null){
+                        Uri selectedImage = result.getData().getData();
+                        Bitmap bitmap = uriToBitmap(getContentResolver(), selectedImage);
+                        imageView.setImageBitmap(bitmap);
+                        try {
+                            identification.getInfoAboutInsect(bitmapToBase64(bitmap));
+                        } catch (IOException e) {
+                            Log.e("Identification", "Error on identification");
+                        }
+                    }
+                });
+
+        takePictureBtn.setOnClickListener(v -> {
             String name = new SimpleDateFormat("yyyMMddHHmmss", Locale.US).format(new Date());
             ContentValues contentValues = new ContentValues();
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
@@ -119,18 +141,9 @@ public class MainActivity extends AppCompatActivity {
                     CharSequence text = "Image captured";
                     Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
                     Bitmap bitmap = image.toBitmap();
-                    Uri imageUri = bitmapToUri(getApplicationContext(), bitmap);
 
                     try {
-
-                        Cursor returnCursor = getContentResolver()
-                                .query(imageUri, null, null, null, null);
-                        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                        returnCursor.moveToFirst();
-                        textView.setText(returnCursor.getString(nameIndex) + imageUri.getPath());
-                        identification.getInfoAboutInsect(returnCursor.getString(nameIndex), imageUri.getPath());
-                        returnCursor.close();
-
+                        identification.getInfoAboutInsect(bitmapToBase64(bitmap));
                     } catch (IOException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
@@ -146,6 +159,12 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("CameraX", "Image capture failed: " + error.getMessage(), error);
                 }
             });
+        });
+
+        selectPictureBtn.setOnClickListener(v -> {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent.setType("image/*");
+        pickImage.launch(intent);
         });
     }
 
@@ -195,6 +214,27 @@ public class MainActivity extends AppCompatActivity {
         return Uri.parse(path);
     }
 
+    public Bitmap uriToBitmap(ContentResolver contentResolver, Uri inImage){
+        Bitmap bitmap = null;
+        try {
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                ImageDecoder.Source source = ImageDecoder.createSource(contentResolver, inImage);
+                bitmap = ImageDecoder.decodeBitmap(source);
+            } else {
+                bitmap = MediaStore.Images.Media.getBitmap(contentResolver, inImage);
+            }
+        } catch (Exception e){
+            Log.e("Uri to bitmap", "Error converting Uri to bitmap");
+        }
+        return bitmap;
+    }
 
+    public String bitmapToBase64(Bitmap image){
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] b = baos.toByteArray();
+
+        return Base64.encodeToString(b, Base64.DEFAULT);
+    }
 
 }
