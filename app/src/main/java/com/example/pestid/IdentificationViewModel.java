@@ -1,5 +1,7 @@
 package com.example.pestid;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
@@ -16,7 +18,7 @@ public class IdentificationViewModel {
             public void run() {
                 try {
                     identification.getInfoAboutInsect(imageBase64);
-                } catch (IOException e) {
+                } catch (IOException | JSONException e) {
                     throw new RuntimeException(e);
                 }
             }
