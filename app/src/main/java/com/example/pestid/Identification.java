@@ -7,6 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -23,7 +24,7 @@ public class Identification {
 //            Log.v("json", jsonBody);
             RequestBody body = RequestBody.create(jsonBody, mediaType);
             Request request = new Request.Builder()
-                    .url("https://insect.kindwise.com/api/v1/identification?details=common_names,url,description,image,danger,danger_desctiption,role")
+                    .url("https://insect.kindwise.com/api/v1/identification?details=common_names,danger,danger_description,role")
                     .method("POST", body)
                     .addHeader("Api-Key", DataStorage.API_KEY)
                     .addHeader("Content-Type", "application/json")
@@ -32,7 +33,14 @@ public class Identification {
             String responseString = response.body().string();
             Log.v("Response", responseString);
                 JSONObject json = new JSONObject(responseString);
-//                JSONArray jsonArray = json.getJSONArray("details");
+                Iterator<String> keys = json.keys();
+                String keysString = "";
+                while (keys.hasNext()){
+                    keysString += keys.next() + ", ";
+                }
+                Log.v("Keys", keysString);
+                JSONArray jsonArray = json.getJSONArray("result");
+//                Log.v("Response", jsonArray.toString());
                 Log.v("Response", json.toString());
             response.close();
     }

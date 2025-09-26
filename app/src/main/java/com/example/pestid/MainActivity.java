@@ -234,6 +234,8 @@ public class MainActivity extends AppCompatActivity {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] b = baos.toByteArray();
-        return Base64.encodeToString(b, Base64.DEFAULT);
+        String base64 = Base64.encodeToString(b, Base64.DEFAULT);
+        base64 = base64.replaceAll("[\\n]", "");
+        return base64;
     }
 }
