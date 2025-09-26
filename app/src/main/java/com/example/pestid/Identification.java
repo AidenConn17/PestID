@@ -39,8 +39,22 @@ public class Identification {
                     keysString += keys.next() + ", ";
                 }
                 Log.v("Keys", keysString);
-                JSONArray jsonArray = json.getJSONArray("result");
-//                Log.v("Response", jsonArray.toString());
+                JSONObject result = new JSONObject(json.getString("result"));
+                JSONObject classification = new JSONObject(result.getString("classification"));
+                JSONArray suggestionsArray = new JSONArray(classification.getString("suggestions"));
+                for(int i = 0; i < suggestionsArray.length(); i++){
+                    if(suggestionsArray.getJSONObject(i).getDouble("probability") > 0.04) {
+                        Log.v("Response string", suggestionsArray.get(i).toString());
+                    } else {
+                        if(i == 0){
+                            Log.v("Response string", "Not confident in identification");
+                            break;
+                        } else {
+                            Log.v("Response string", "No longer confident in identification");
+                            break;
+                        }
+                    }
+                }
                 Log.v("Response", json.toString());
             response.close();
     }
