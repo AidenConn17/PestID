@@ -46,6 +46,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -55,6 +58,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
 
 
 
@@ -69,8 +73,9 @@ public class MainActivity extends AppCompatActivity {
     Executor cameraExecutor;
     ExecutorService executorService = Executors.newCachedThreadPool();
     ThreadPerTaskExecutor identificationExecutor = new ThreadPerTaskExecutor();
-    IdentificationViewModel identification = new IdentificationViewModel(identificationExecutor);
+    Identification identification = new Identification(identificationExecutor);
     ActivityResultLauncher<Intent> pickImage;
+    ArrayList<JSONArray> identifications;
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     @SuppressLint({"SourceLockedOrientationActivity", "IntentReset"})
@@ -119,9 +124,11 @@ public class MainActivity extends AppCompatActivity {
                         Bitmap bitmap = uriToBitmap(getContentResolver(), selectedImage);
                         imageView.setImageBitmap(bitmap);
                         try {
-                            identification.getInfoAboutInsect(bitmapToBase64(bitmap));
+                            identifications = identification.getInfoAboutInsect(bitmapToBase64(bitmap));
                         } catch (IOException e) {
                             Log.e("Identification", "Error on identification");
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
                         }
                     }
                 });
@@ -144,13 +151,15 @@ public class MainActivity extends AppCompatActivity {
                     Bitmap bitmap = image.toBitmap();
 
                     try {
-                        identification.getInfoAboutInsect(bitmapToBase64(bitmap));
-                    } catch (IOException e){
+                        identifications = identification.getInfoAboutInsect(bitmapToBase64(bitmap));
+                    } catch (IOException | JSONException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
                     imageView.setImageBitmap(bitmap);
 
                     image.close();
+                    Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
+                    intent.putExtra()
                 }
 
                 @Override
