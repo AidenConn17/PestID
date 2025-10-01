@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -18,8 +19,10 @@ import okhttp3.Response;
 public class Identification {
     ThreadPerTaskExecutor executor;
     public Identification(ThreadPerTaskExecutor executor){this.executor = executor;}
-    ArrayList<JSONArray> confidentSuggestions = new ArrayList<>();
-        public ArrayList<JSONArray> getInfoAboutInsect(String imageBase64) throws IOException, JSONException {
+    ArrayList<JSONObject> confidentSuggestions = new ArrayList<>();
+    static CountDownLatch latch = new CountDownLatch(1);
+        public ArrayList<JSONObject> getInfoAboutInsect(String imageBase64) throws IOException, JSONException {
+            latch = new CountDownLatch(1);
         executor.execute(() -> {
             try {
                 OkHttpClient client = new OkHttpClient().newBuilder()
@@ -40,11 +43,11 @@ public class Identification {
                 JSONObject result = new JSONObject(json.getString("result"));
                 JSONObject classification = new JSONObject(result.getString("classification"));
                 JSONArray suggestionsArray = new JSONArray(classification.getString("suggestions"));
-
+                Log.v("Suggestions Array", suggestionsArray.toString());
                 for (int i = 0; i < suggestionsArray.length(); i++) {
                     if (suggestionsArray.getJSONObject(i).getDouble("probability") > 0.04) {
                         Log.v("Response string", suggestionsArray.get(i).toString());
-                        confidentSuggestions.add((JSONArray) suggestionsArray.get(i));
+                        confidentSuggestions.add(suggestionsArray.getJSONObject(i));
                     } else {
                         break;
                     }
@@ -52,6 +55,7 @@ public class Identification {
                 response.close();
             } catch (JSONException | IOException ignored){
             }
+            latch.countDown();
         });
         return confidentSuggestions;
     }

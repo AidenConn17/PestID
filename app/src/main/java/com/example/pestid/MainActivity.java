@@ -10,7 +10,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 
-import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
@@ -48,6 +47,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     ThreadPerTaskExecutor identificationExecutor = new ThreadPerTaskExecutor();
     Identification identification = new Identification(identificationExecutor);
     ActivityResultLauncher<Intent> pickImage;
-    ArrayList<JSONArray> identifications;
+    ArrayList<JSONObject> identifications;
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     @SuppressLint({"SourceLockedOrientationActivity", "IntentReset"})
@@ -130,6 +130,12 @@ public class MainActivity extends AppCompatActivity {
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }
+
+                        Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
+                        try {
+                            Identification.latch.await();
+                            intent.putExtra("", jsonArraysToStringArray(identifications)); //TODO: Actually send String[]
+                        } catch (JSONException | InterruptedException ignored) {}
                     }
                 });
 
@@ -159,7 +165,9 @@ public class MainActivity extends AppCompatActivity {
 
                     image.close();
                     Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
-                    intent.putExtra()
+                    try {
+                        intent.putExtra("", jsonArraysToStringArray(identifications)); //TODO: Actually send String[]
+                    } catch (JSONException ignored) {}
                 }
 
                 @Override
@@ -217,13 +225,6 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-    public Uri bitmapToUri(Context inContext, Bitmap inImage){
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
-        return Uri.parse(path);
-    }
-
     public Bitmap uriToBitmap(ContentResolver contentResolver, Uri inImage){
         Bitmap bitmap = null;
         try {
@@ -244,7 +245,35 @@ public class MainActivity extends AppCompatActivity {
         image.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] b = baos.toByteArray();
         String base64 = Base64.encodeToString(b, Base64.DEFAULT);
-        base64 = base64.replaceAll("[\\n]", "");
+        base64 = base64.replaceAll("\\n", "");
         return base64;
+    }
+
+    public String[] jsonArraysToStringArray(ArrayList<JSONObject> arrayList) throws JSONException {
+        String[] returnValues = new String[15];
+        int stringArrayIndex = 0;
+        for (int index = 0; index < arrayList.size(); index++){
+            Log.v("List", "Value at index " + index + ": " + arrayList.get(index));
+            // Name
+            returnValues[stringArrayIndex] = arrayList.get(index).getString("name") +
+                    arrayList.get(index).
+                            getJSONObject("details").
+                            getJSONArray("common_names").get(0);
+            stringArrayIndex++;
+
+            // Confidence
+            returnValues[stringArrayIndex] = "" + arrayList.get(index).getDouble("probability");
+            stringArrayIndex++;
+
+            // Danger
+            returnValues[stringArrayIndex] = arrayList.get(index).
+                    getJSONObject("details").
+                    getJSONObject("danger").toString();
+            Log.v("Danger", arrayList.get(index).
+                    getJSONObject("details").
+                    getJSONObject("danger").toString());
+            stringArrayIndex++;
+        }
+        return returnValues;
     }
 }
