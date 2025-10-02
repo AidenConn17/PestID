@@ -43,10 +43,8 @@ public class Identification {
                 JSONObject result = new JSONObject(json.getString("result"));
                 JSONObject classification = new JSONObject(result.getString("classification"));
                 JSONArray suggestionsArray = new JSONArray(classification.getString("suggestions"));
-                Log.v("Suggestions Array", suggestionsArray.toString());
                 for (int i = 0; i < suggestionsArray.length(); i++) {
-                    if (suggestionsArray.getJSONObject(i).getDouble("probability") > 0.04) {
-                        Log.v("Response string", suggestionsArray.get(i).toString());
+                    if (suggestionsArray.getJSONObject(i).getDouble("probability") > 0.2) {
                         confidentSuggestions.add(suggestionsArray.getJSONObject(i));
                     } else {
                         break;

@@ -21,8 +21,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -45,15 +43,16 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -66,8 +65,6 @@ public class MainActivity extends AppCompatActivity {
     Button takePictureBtn;
     Button selectPictureBtn;
     PreviewView previewView;
-    ImageView imageView;
-    TextView textView;
     ImageCapture imageCapture;
     Camera camera;
     Executor cameraExecutor;
@@ -107,8 +104,6 @@ public class MainActivity extends AppCompatActivity {
         takePictureBtn = findViewById(R.id.takePictureBtn);
         selectPictureBtn = findViewById(R.id.selectPictureBtn);
         previewView = findViewById(R.id.previewView);
-        imageView = findViewById(R.id.imageView);
-        textView = findViewById(R.id.textView);
 
         imageCapture = new ImageCapture.Builder().setTargetRotation(
                         getScreenRotationInDegrees(this))
@@ -122,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
                     if(result.getResultCode() == MainActivity.RESULT_OK && result.getData() != null){
                         Uri selectedImage = result.getData().getData();
                         Bitmap bitmap = uriToBitmap(getContentResolver(), selectedImage);
-                        imageView.setImageBitmap(bitmap);
                         try {
                             identifications = identification.getInfoAboutInsect(bitmapToBase64(bitmap));
                         } catch (IOException e) {
@@ -134,8 +128,12 @@ public class MainActivity extends AppCompatActivity {
                         Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
                         try {
                             Identification.latch.await();
-                            intent.putExtra("", jsonArraysToStringArray(identifications)); //TODO: Actually send String[]
-                        } catch (JSONException | InterruptedException ignored) {}
+                            intent.putExtra("VALUES", jsonObjectsToStringArray(identifications)); //TODO: Actually send String[]
+                            Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
+                            startActivity(intent);
+                        } catch (JSONException | InterruptedException e) {
+                            Log.e("Failed to parse json: ", Objects.requireNonNull(e.getMessage()));
+                        }
                     }
                 });
 
@@ -161,12 +159,12 @@ public class MainActivity extends AppCompatActivity {
                     } catch (IOException | JSONException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
-                    imageView.setImageBitmap(bitmap);
 
                     image.close();
                     Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
                     try {
-                        intent.putExtra("", jsonArraysToStringArray(identifications)); //TODO: Actually send String[]
+                        intent.putExtra("VALUES", jsonObjectsToStringArray(identifications)); //TODO: Actually send String[]
+                        startActivity(intent);
                     } catch (JSONException ignored) {}
                 }
 
@@ -249,29 +247,43 @@ public class MainActivity extends AppCompatActivity {
         return base64;
     }
 
-    public String[] jsonArraysToStringArray(ArrayList<JSONObject> arrayList) throws JSONException {
-        String[] returnValues = new String[15];
+    public String[] jsonObjectsToStringArray(ArrayList<JSONObject> arrayList) throws JSONException {
+        if(arrayList.isEmpty()){
+            return new String[]{"No confident identifications"};
+        }
+
+        String[] returnValues = new String[8];
         int stringArrayIndex = 0;
         for (int index = 0; index < arrayList.size(); index++){
-            Log.v("List", "Value at index " + index + ": " + arrayList.get(index));
+
             // Name
-            returnValues[stringArrayIndex] = arrayList.get(index).getString("name") +
-                    arrayList.get(index).
-                            getJSONObject("details").
-                            getJSONArray("common_names").get(0);
+            returnValues[stringArrayIndex] = "Name: " + arrayList.get(index).
+                    getJSONObject("details").
+                    getJSONArray("common_names").get(0) + " (" + arrayList.get(index).getString("name") + ")";
             stringArrayIndex++;
 
             // Confidence
-            returnValues[stringArrayIndex] = "" + arrayList.get(index).getDouble("probability");
+            returnValues[stringArrayIndex] = "Confidence: " + arrayList.get(index).getDouble("probability") * 100 + "%";
             stringArrayIndex++;
 
             // Danger
-            returnValues[stringArrayIndex] = arrayList.get(index).
-                    getJSONObject("details").
-                    getJSONObject("danger").toString();
-            Log.v("Danger", arrayList.get(index).
-                    getJSONObject("details").
-                    getJSONObject("danger").toString());
+            try {
+                returnValues[stringArrayIndex] = "Danger: " + arrayList.get(index).
+                        getJSONObject("details").
+                        getJSONArray("danger");
+            } catch (JSONException e){
+                returnValues[stringArrayIndex] = "Danger: Not Available";
+            }
+            stringArrayIndex++;
+
+            // Role
+            try {
+                returnValues[stringArrayIndex] = "Role: " + arrayList.get(index)
+                        .getJSONObject("details")
+                        .getJSONArray("role");
+            } catch (JSONException e){
+                returnValues[stringArrayIndex] = "Role: Not Available";
+            }
             stringArrayIndex++;
         }
         return returnValues;
