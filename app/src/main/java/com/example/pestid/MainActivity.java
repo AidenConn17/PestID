@@ -21,7 +21,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -150,8 +149,6 @@ public class MainActivity extends AppCompatActivity {
             imageCapture.takePicture( cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
                 @Override
                 public void onCaptureSuccess(@NonNull ImageProxy image) {
-                    CharSequence text = "Image captured";
-                    Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
                     Bitmap bitmap = image.toBitmap();
 
                     try {
@@ -170,8 +167,6 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onError(@NonNull ImageCaptureException error) {
-                    CharSequence text = "An error occurred";
-                    Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
                     Log.e("CameraX", "Image capture failed: " + error.getMessage(), error);
                 }
             });
@@ -261,28 +256,55 @@ public class MainActivity extends AppCompatActivity {
                     getJSONObject("details").
                     getJSONArray("common_names").get(0) + " (" + arrayList.get(index).getString("name") + ")";
             stringArrayIndex++;
-
             // Confidence
-            returnValues[stringArrayIndex] = "Confidence: " + arrayList.get(index).getDouble("probability") * 100 + "%";
+            double confidence = (double) Math.round(arrayList.get(index).getDouble("probability") * 10000) / 100;
+            returnValues[stringArrayIndex] = "Confidence: " + confidence + "%";
             stringArrayIndex++;
+
+            StringBuilder dangerBuilder = new StringBuilder();
+            dangerBuilder.append("Danger: ");
 
             // Danger
             try {
-                returnValues[stringArrayIndex] = "Danger: " + arrayList.get(index).
-                        getJSONObject("details").
-                        getJSONArray("danger");
+                for(int i = 0; i < arrayList.get(index)
+                        .getJSONObject("details")
+                        .getJSONArray("danger").length(); i++) {
+                    if(i == 0) {
+                        dangerBuilder.append(arrayList.get(index)
+                                .getJSONObject("details")
+                                .getJSONArray("danger").get(i));
+                    } else{
+                        dangerBuilder.append(", ").append(arrayList.get(index)
+                                .getJSONObject("details")
+                                .getJSONArray("danger").get(i));
+                    }
+                }
+                returnValues[stringArrayIndex] = dangerBuilder.toString();
             } catch (JSONException e){
-                returnValues[stringArrayIndex] = "Danger: Not Available";
+                returnValues[stringArrayIndex] = "Danger: not available";
             }
             stringArrayIndex++;
 
+            StringBuilder roleBuilder = new StringBuilder();
+            roleBuilder.append("Roles: ");
             // Role
             try {
-                returnValues[stringArrayIndex] = "Role: " + arrayList.get(index)
+                for(int i = 0; i < arrayList.get(index)
                         .getJSONObject("details")
-                        .getJSONArray("role");
+                        .getJSONArray("role").length(); i++){
+                    if(i == 0) {
+                        roleBuilder.append(arrayList.get(index)
+                                .getJSONObject("details")
+                                .getJSONArray("role").get(i));
+                    } else{
+                        roleBuilder.append(", ").append(arrayList.get(index)
+                                .getJSONObject("details")
+                                .getJSONArray("role").get(i));
+                    }
+                }
+                returnValues[stringArrayIndex] = roleBuilder.toString();
             } catch (JSONException e){
-                returnValues[stringArrayIndex] = "Role: Not Available";
+                returnValues[stringArrayIndex] = "Role: not available";
             }
             stringArrayIndex++;
         }
