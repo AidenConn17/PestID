@@ -31,7 +31,7 @@ public class Identification {
                 String jsonBody = "{\"images\": [\"data:image/jpeg;base64," + imageBase64 + "\"]\n}";
                 RequestBody body = RequestBody.create(jsonBody, mediaType);
                 Request request = new Request.Builder()
-                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,danger,danger_description,role")
+                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,danger,role")
                         .method("POST", body)
                         .addHeader("Api-Key", DataStorage.API_KEY)
                         .addHeader("Content-Type", "application/json")

@@ -54,8 +54,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.ArrayList;
 
 
@@ -67,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
     ImageCapture imageCapture;
     Camera camera;
     Executor cameraExecutor;
-    ExecutorService executorService = Executors.newCachedThreadPool();
     ThreadPerTaskExecutor identificationExecutor = new ThreadPerTaskExecutor();
     Identification identification = new Identification(identificationExecutor);
     ActivityResultLauncher<Intent> pickImage;
@@ -103,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         takePictureBtn = findViewById(R.id.takePictureBtn);
         selectPictureBtn = findViewById(R.id.selectPictureBtn);
         previewView = findViewById(R.id.previewView);
-
+        previewView.setScaleType(PreviewView.ScaleType.FIT_CENTER);
         imageCapture = new ImageCapture.Builder().setTargetRotation(
                         getScreenRotationInDegrees(this))
                 .build();
@@ -127,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                         Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
                         try {
                             Identification.latch.await();
-                            intent.putExtra("VALUES", jsonObjectsToStringArray(identifications)); //TODO: Actually send String[]
+                            intent.putExtra("VALUES", jsonObjectsToStringArray(identifications));
                             Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
                             startActivity(intent);
                         } catch (JSONException | InterruptedException e) {
@@ -160,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                     image.close();
                     Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
                     try {
-                        intent.putExtra("VALUES", jsonObjectsToStringArray(identifications)); //TODO: Actually send String[]
+                        intent.putExtra("VALUES", jsonObjectsToStringArray(identifications));
                         startActivity(intent);
                     } catch (JSONException ignored) {}
                 }
