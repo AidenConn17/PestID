@@ -232,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
 
     public String bitmapToBase64(Bitmap image){
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        image.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] b = baos.toByteArray();
         String base64 = Base64.encodeToString(b, Base64.DEFAULT);
         base64 = base64.replaceAll("\\n", "");

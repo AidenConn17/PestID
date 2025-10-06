@@ -7,4 +7,5 @@
     <string name="back_button">Back</string>
     <string name="id_1">Identification One</string>
     <string name="id_2">Identification Two</string>
+    <string name="no_id">No Confident Identifications</string>
 </resources>

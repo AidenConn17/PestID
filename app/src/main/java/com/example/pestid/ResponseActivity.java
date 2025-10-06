@@ -23,6 +23,7 @@ public class ResponseActivity extends AppCompatActivity {
     TextView danger2;
     TextView role1;
     TextView role2;
+    TextView noId;
     String[] values;
     Intent launchedIntent;
 
@@ -48,6 +49,7 @@ public class ResponseActivity extends AppCompatActivity {
         danger2 = findViewById(R.id.danger2);
         role1 = findViewById(R.id.role1);
         role2 = findViewById(R.id.role2);
+        noId = findViewById(R.id.no_id);
 
         launchedIntent = getIntent();
 
@@ -66,6 +68,7 @@ public class ResponseActivity extends AppCompatActivity {
             role1.setText("");
             role2.setText("");
         } else {
+            noId.setText("");
             id1.setText(R.string.id_1);
             if(values[4] != null)
                 id2.setText(R.string.id_2);

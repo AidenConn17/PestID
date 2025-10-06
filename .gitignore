@@ -34,6 +34,3 @@ google-services.json
 *.hprof
 app/src/main/java/com/example/pestid/DataStorage.java
 app/src/main/java/com/example/pestid/DataStorage.java
-
-# Data storage
-DataStorage.java

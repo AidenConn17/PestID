@@ -33,12 +33,12 @@ public class Identification {
                 Request request = new Request.Builder()
                         .url("https://insect.kindwise.com/api/v1/identification?details=common_names,danger,role")
                         .method("POST", body)
-                        .addHeader("Api-Key", DataStorage.API_KEY)
+                        .addHeader("Api-Key", APIKey.API_KEY)
                         .addHeader("Content-Type", "application/json")
                         .build();
                 Response response = client.newCall(request).execute();
                 String responseString = response.body().string();
-                Log.v("Response", responseString);
+                Log.v("API Response", responseString);
                 JSONObject json = new JSONObject(responseString);
                 JSONObject result = new JSONObject(json.getString("result"));
                 JSONObject classification = new JSONObject(result.getString("classification"));
