@@ -21,10 +21,18 @@ public class Identification {
     public Identification(ThreadPerTaskExecutor executor){this.executor = executor;}
     ArrayList<JSONObject> confidentSuggestions = new ArrayList<>();
     static CountDownLatch latch = new CountDownLatch(1);
-        public ArrayList<JSONObject> getInfoAboutInsect(String imageBase64) throws IOException, JSONException {
-            latch = new CountDownLatch(1);
+
+    /**
+     * Sends an image to the insect.id API and returns a list of confident suggestions from the response.
+     * @param imageBase64 The image to use encoded in the Base64 format.
+     * @return An ArrayList containing JSONObjects pointing to confident suggestions.
+     * @throws JSONException Error parsing JSON.
+     */
+    public ArrayList<JSONObject> getInfoAboutInsect(String imageBase64) throws JSONException {
+        latch = new CountDownLatch(1);
         executor.execute(() -> {
             try {
+                // Create an API request
                 OkHttpClient client = new OkHttpClient().newBuilder()
                         .build();
                 MediaType mediaType = MediaType.parse("application/json");
@@ -38,7 +46,7 @@ public class Identification {
                         .build();
                 Response response = client.newCall(request).execute();
                 String responseString = response.body().string();
-                Log.v("API Response", responseString);
+                // Get all the confident suggestions and add them to an array list
                 JSONObject json = new JSONObject(responseString);
                 JSONObject result = new JSONObject(json.getString("result"));
                 JSONObject classification = new JSONObject(result.getString("classification"));

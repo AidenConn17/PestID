@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
@@ -48,13 +47,13 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.ArrayList;
 
 
 
@@ -108,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
             cameraExecutor = getMainExecutor();
         }
 
+        // Launch the gallery for the user to select an image.
         pickImage = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if(result.getResultCode() == MainActivity.RESULT_OK && result.getData() != null){
@@ -115,8 +115,6 @@ public class MainActivity extends AppCompatActivity {
                         Bitmap bitmap = uriToBitmap(getContentResolver(), selectedImage);
                         try {
                             identifications = identification.getInfoAboutInsect(bitmapToBase64(bitmap));
-                        } catch (IOException e) {
-                            Log.e("Identification", "Error on identification");
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
                         }
@@ -133,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+        // Ran when user hits the take picture button - takes a picture and passes it to the API
         takePictureBtn.setOnClickListener(v -> {
             String name = new SimpleDateFormat("yyyMMddHHmmss", Locale.US).format(new Date());
             ContentValues contentValues = new ContentValues();
@@ -144,13 +143,18 @@ public class MainActivity extends AppCompatActivity {
             }
 
             imageCapture.takePicture( cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
+
+                /**
+                 * Ran when image capture succeeds.
+                 * @param image The captured image.
+                 */
                 @Override
                 public void onCaptureSuccess(@NonNull ImageProxy image) {
                     Bitmap bitmap = image.toBitmap();
 
                     try {
                         identifications = identification.getInfoAboutInsect(bitmapToBase64(bitmap));
-                    } catch (IOException | JSONException e){
+                    } catch (JSONException e){
                         Log.e("CameraX", "Error converting image: " + e.getMessage(), e);
                     }
 
@@ -169,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
             });
         });
 
+        // Ran when user hits the select image button - gets image and sends it to the API.
         selectPictureBtn.setOnClickListener(v -> {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
@@ -176,6 +181,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Binds the PreviewView to what the camera sees.
+     * @param cameraProvider The object that provides the camera.
+     */
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider){
         Preview preview = new Preview.Builder().build();
 
@@ -185,6 +194,11 @@ public class MainActivity extends AppCompatActivity {
         camera = cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, preview);
     }
 
+    /**
+     * Gets the screens current rotation in degrees.
+     * @param context The activity.
+     * @return Screen rotation in degrees.
+     */
     int getScreenRotationInDegrees(Context context){
         WindowManager wm = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
         Display display;
@@ -239,6 +253,12 @@ public class MainActivity extends AppCompatActivity {
         return base64;
     }
 
+    /**
+     *
+     * @param arrayList The arrayList of JSONObjects to parse through.
+     * @return A 8 index long String array containing information about the response.
+     * @throws JSONException Error parsing through the JSON.
+     */
     public String[] jsonObjectsToStringArray(ArrayList<JSONObject> arrayList) throws JSONException {
         if(arrayList.isEmpty()){
             return new String[]{"No confident identifications"};
