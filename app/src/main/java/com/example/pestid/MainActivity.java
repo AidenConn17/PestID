@@ -45,7 +45,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -269,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
         for (int index = 0; index < arrayList.size(); index++){
 
             // Name
+            arrayList.get(index).getJSONObject("details").getJSONArray("common_names");
             returnValues[stringArrayIndex] = "Name: " + arrayList.get(index).
                     getJSONObject("details").
                     getJSONArray("common_names").get(0) + " (" + arrayList.get(index).getString("name") + ")";
