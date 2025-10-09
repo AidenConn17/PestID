@@ -1,5 +1,7 @@
 package com.example.pestid;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,13 +39,14 @@ public class Identification {
                 String jsonBody = "{\"images\": [\"data:image/jpeg;base64," + imageBase64 + "\"]\n}";
                 RequestBody body = RequestBody.create(jsonBody, mediaType);
                 Request request = new Request.Builder()
-                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,danger,role")
+                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,image,,danger,role")
                         .method("POST", body)
                         .addHeader("Api-Key", APIKey.API_KEY)
                         .addHeader("Content-Type", "application/json")
                         .build();
                 Response response = client.newCall(request).execute();
                 String responseString = response.body().string();
+                Log.d("API Response", responseString);
                 // Get all the confident suggestions and add them to an array list
                 JSONObject json = new JSONObject(responseString);
                 JSONObject result = new JSONObject(json.getString("result"));

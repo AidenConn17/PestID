@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             Identification.latch.await();
                             intent.putExtra("VALUES", jsonObjectsToStringArray(identifications));
-                            Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
+//                            Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
                             startActivity(intent);
                         } catch (JSONException | InterruptedException e) {
                             Log.e("Failed to parse json: ", Objects.requireNonNull(e.getMessage()));
@@ -268,10 +268,14 @@ public class MainActivity extends AppCompatActivity {
         for (int index = 0; index < arrayList.size(); index++){
 
             // Name
-            arrayList.get(index).getJSONObject("details").getJSONArray("common_names");
-            returnValues[stringArrayIndex] = "Name: " + arrayList.get(index).
-                    getJSONObject("details").
-                    getJSONArray("common_names").get(0) + " (" + arrayList.get(index).getString("name") + ")";
+            if(!arrayList.get(index).getJSONObject("details").isNull("common_names")) {
+                arrayList.get(index).getJSONObject("details").getJSONArray("common_names");
+                returnValues[stringArrayIndex] = "Name: " + arrayList.get(index).
+                        getJSONObject("details").
+                        getJSONArray("common_names").get(0) + " (" + arrayList.get(index).getString("name") + ")";
+            } else {
+                returnValues[stringArrayIndex] = "Name: " + arrayList.get(index).getString("name");
+            }
             stringArrayIndex++;
             // Confidence
             double confidence = (double) Math.round(arrayList.get(index).getDouble("probability") * 10000) / 100;
