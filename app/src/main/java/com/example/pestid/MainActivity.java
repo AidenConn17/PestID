@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Gets the screens current rotation in degrees.
      * @param context The activity.
-     * @return Screen rotation in degrees.
+     * @return screen rotation in degrees.
      */
     int getScreenRotationInDegrees(Context context){
         WindowManager wm = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
@@ -227,6 +227,12 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
+    /**
+     * Converts a URI image to a bitmap.
+     * @param contentResolver The content resolver.
+     * @param inImage The URI image to use.
+     * @return a Bitmap.
+     */
     public Bitmap uriToBitmap(ContentResolver contentResolver, Uri inImage){
         Bitmap bitmap = null;
         try {
@@ -242,6 +248,11 @@ public class MainActivity extends AppCompatActivity {
         return bitmap;
     }
 
+    /**
+     * Converts a Bitmap into Base64.
+     * @param image The image to convert.
+     * @return the image encoded in the Base64 format.
+     */
     public String bitmapToBase64(Bitmap image){
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.PNG, 100, baos);
