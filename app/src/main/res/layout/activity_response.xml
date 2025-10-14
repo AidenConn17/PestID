@@ -7,6 +7,15 @@
     android:fitsSystemWindows="true"
     tools:context=".ResponseActivity">
 
+    <TextView
+        android:id="@+id/noConfidentId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/no_confident_identifications"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"

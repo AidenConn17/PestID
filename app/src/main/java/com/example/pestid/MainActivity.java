@@ -47,7 +47,6 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -120,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
 
                         Intent intent = new Intent(MainActivity.this, ResponseActivity.class);
                         try {
-                            Identification.latch.await();
+                            Identification.identificationLatch.await();
                             intent.putExtra("VALUES", jsonObjectsToStringArray(identifications));
 //                            Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
                             startActivity(intent);
@@ -263,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
             return new String[]{"No confident identifications"};
         }
 
-        String[] returnValues = new String[8];
+        String[] returnValues = new String[10];
         int stringArrayIndex = 0;
         for (int index = 0; index < arrayList.size(); index++){
 
@@ -327,6 +326,14 @@ public class MainActivity extends AppCompatActivity {
             } catch (JSONException e){
                 returnValues[stringArrayIndex] = "Role: not available";
             }
+            stringArrayIndex++;
+
+            // Image
+            returnValues[stringArrayIndex] = arrayList.get(index)
+                    .getJSONObject("details")
+                    .getJSONObject("image")
+                    .getString("value");
+
             stringArrayIndex++;
         }
         return returnValues;

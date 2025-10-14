@@ -20,7 +20,7 @@ public class Identification {
     ThreadPerTaskExecutor executor;
     public Identification(ThreadPerTaskExecutor executor){this.executor = executor;}
     ArrayList<JSONObject> confidentSuggestions = new ArrayList<>();
-    static CountDownLatch latch = new CountDownLatch(1);
+    static CountDownLatch identificationLatch = new CountDownLatch(1);
 
     /**
      * Sends an image to the insect.id API and returns a list of confident suggestions from the response.
@@ -29,7 +29,7 @@ public class Identification {
      * @throws JSONException Error parsing JSON.
      */
     public ArrayList<JSONObject> getInfoAboutInsect(String imageBase64) throws JSONException {
-        latch = new CountDownLatch(1);
+        identificationLatch = new CountDownLatch(1);
         executor.execute(() -> {
             try {
                 // Create an API request
@@ -39,7 +39,7 @@ public class Identification {
                 String jsonBody = "{\"images\": [\"data:image/jpeg;base64," + imageBase64 + "\"]\n}";
                 RequestBody body = RequestBody.create(jsonBody, mediaType);
                 Request request = new Request.Builder()
-                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,image,,danger,role")
+                        .url("https://insect.kindwise.com/api/v1/identification?details=common_names,image,danger,role")
                         .method("POST", body)
                         .addHeader("Api-Key", APIKey.API_KEY)
                         .addHeader("Content-Type", "application/json")
@@ -62,7 +62,7 @@ public class Identification {
                 response.close();
             } catch (JSONException | IOException ignored){
             }
-            latch.countDown();
+            identificationLatch.countDown();
         });
         return confidentSuggestions;
     }
