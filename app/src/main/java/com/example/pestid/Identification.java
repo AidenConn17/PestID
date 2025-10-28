@@ -46,7 +46,6 @@ public class Identification {
                         .build();
                 Response response = client.newCall(request).execute();
                 String responseString = response.body().string();
-                Log.d("API Response", responseString);
                 // Get all the confident suggestions and add them to an array list
                 JSONObject json = new JSONObject(responseString);
                 JSONObject result = new JSONObject(json.getString("result"));

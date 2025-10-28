@@ -121,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             Identification.identificationLatch.await();
                             intent.putExtra("VALUES", jsonObjectsToStringArray(identifications));
-//                            Log.v("Values", Arrays.toString(jsonObjectsToStringArray(identifications)));
                             startActivity(intent);
                         } catch (JSONException | InterruptedException e) {
                             Log.e("Failed to parse json: ", Objects.requireNonNull(e.getMessage()));
