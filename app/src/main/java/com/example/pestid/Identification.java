@@ -1,6 +1,5 @@
 package com.example.pestid;
 
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,9 +22,9 @@ public class Identification {
     static CountDownLatch identificationLatch = new CountDownLatch(1);
 
     /**
-     * Sends an image to the insect.id API and returns a list of confident suggestions from the response.
+     * Sends an image to the insect.id API and returns a list of confident (>20% confidence) suggestions from the response.
      * @param imageBase64 The image to use encoded in the Base64 format.
-     * @return An ArrayList containing JSONObjects pointing to confident suggestions.
+     * @return an ArrayList containing JSONObjects pointing to confident suggestions.
      * @throws JSONException Error parsing JSON.
      */
     public ArrayList<JSONObject> getInfoAboutInsect(String imageBase64) throws JSONException {

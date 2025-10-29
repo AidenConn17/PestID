@@ -256,15 +256,13 @@ public class MainActivity extends AppCompatActivity {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] b = baos.toByteArray();
-        String base64 = Base64.encodeToString(b, Base64.DEFAULT);
-        base64 = base64.replaceAll("\\n", "");
-        return base64;
+        return Base64.encodeToString(b, Base64.NO_WRAP);
     }
 
     /**
      *
      * @param arrayList The arrayList of JSONObjects to parse through.
-     * @return A 8 index long String array containing information about the response.
+     * @return an 8 index long String array containing information about the response.
      * @throws JSONException Error parsing through the JSON.
      */
     public String[] jsonObjectsToStringArray(ArrayList<JSONObject> arrayList) throws JSONException {

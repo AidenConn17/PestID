@@ -74,6 +74,7 @@ public class ResponseActivity extends AppCompatActivity {
                 danger2.setText("");
                 role2.setText("");
                 image2.setImageAlpha(0);
+                // One identification
             } else if (sentValues[5] != null) {
                 noConfidentId.setText("");
 
@@ -89,6 +90,7 @@ public class ResponseActivity extends AppCompatActivity {
                 danger2.setText(sentValues[7]);
                 role2.setText(sentValues[8]);
                 Glide.with(this).load(sentValues[9]).into(image2);
+                // Two identifications
             } else {
                 noConfidentId.setText("");
 
@@ -108,6 +110,7 @@ public class ResponseActivity extends AppCompatActivity {
         } catch (NullPointerException e){
             Log.e("Response Activity", "Sent Values is null");
         }
+        
         backBtn.setOnClickListener(v -> {
             Intent intent = new Intent(ResponseActivity.this, MainActivity.class);
             startActivity(intent);
